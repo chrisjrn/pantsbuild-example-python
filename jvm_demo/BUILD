@@ -47,6 +47,8 @@ deploy_jar(
     ],
 )
 
+
+# Generate the schema
 experimental_shell_command(
     name="openapi-schema",
     tools=["python3.9",],  # Not managed by pants interpreter constraints, may be incompatible
@@ -56,7 +58,7 @@ experimental_shell_command(
 )
 
 
-# Generate the openapi bindings from a schema produce
+# Generate the openapi bindings from a schema produced by a different step
 experimental_shell_command(
     name="generate-openapi-js-bindings",
     tools=["java", "python3.9",],  # <--- Not the Pants-managed JVM toolchain. May be incompatible.
@@ -65,6 +67,8 @@ experimental_shell_command(
     outputs=["js-bindings/",]
 )
 
+
+# Move the files so that the resulting archive doesn't resemble our monorepo
 relocated_files(
     name="openapi-js-bindings-files",
     files_targets=[":generate-openapi-js-bindings",],
@@ -72,12 +76,19 @@ relocated_files(
     dest="",
 )
 
+
+# The output artifact
 archive(
     name="openapi-js-bindings",
     format="tar.gz",
     description="Open api bindings from sample schema",
     files=[":openapi-js-bindings-files",],
 )
+
+
+####
+#### UTILITY RULES FOR TESTING/DEBUGGING
+####
 
 # Allow end-users to run the tool using Pants
 experimental_run_shell_command(
