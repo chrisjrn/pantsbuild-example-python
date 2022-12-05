@@ -27,8 +27,10 @@ paths:
                   type: string
 """
 
+
 def main():
     print(schema_yaml)
+
 
 if __name__ == "__main__":
     main()

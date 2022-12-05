@@ -52,10 +52,21 @@ deploy_jar(
 experimental_shell_command(
     name="openapi-schema",
     tools=["python3.9",],  # Not managed by pants interpreter constraints, may be incompatible
-    command="python3.9 generate-schema-pex.pex > generated-schema.yaml", # You need to know the pex filename
+    command="python3.8 generate-schema-pex.pex > generated-schema.yaml", # You need to know the pex filename
     dependencies=[":generate-schema-pex", ":python-library-with-api-annotations"],
     outputs=["generated-schema.yaml"],
 )
+
+# Generate the schema
+experimental_run_in_sandbox(
+    name="openapi-schema-ris",
+    runnable=":generate-schema",
+    argv=["generated-schema.yaml"],
+    dependencies=[":python-library-with-api-annotations"],
+    outputs=["generated-schema.yaml"],
+    log_output=True,
+)
+
 
 
 # Generate the openapi bindings from a schema produced by a different step
@@ -67,6 +78,16 @@ experimental_shell_command(
     outputs=["js-bindings/",]
 )
 
+# Generate the openapi bindings from a schema produced by a different step
+experimental_shell_command(
+    name="generate-openapi-js-bindings-ris",
+    tools=["java", "python3.9",],  # <--- Not the Pants-managed JVM toolchain. May be incompatible.
+    command="java -jar openapi-generator-cli-tool.jar generate -i generated-schema.yaml -g javascript -o ./js-bindings",
+    dependencies=[":openapi-generator-cli-tool", ":openapi-schema-ris",],
+    outputs=["js-bindings/",]
+)
+
+
 
 # Move the files so that the resulting archive doesn't resemble our monorepo
 relocated_files(
@@ -76,6 +97,14 @@ relocated_files(
     dest="",
 )
 
+relocated_files(
+    name="openapi-js-bindings-files-ris",
+    files_targets=[":generate-openapi-js-bindings-ris",],
+    src="jvm_demo/js-bindings",
+    dest="",
+)
+
+
 
 # The output artifact
 archive(
@@ -84,6 +113,14 @@ archive(
     description="Open api bindings from sample schema",
     files=[":openapi-js-bindings-files",],
 )
+
+archive(
+    name="openapi-js-bindings-ris",
+    format="tar.gz",
+    description="Open api bindings from sample schema",
+    files=[":openapi-js-bindings-files-ris",],
+)
+
 
 
 ####
@@ -101,5 +138,5 @@ experimental_run_shell_command(
 experimental_run_shell_command(
     name="list-outputs",
     command="ls -laR {chroot}",
-    dependencies=[":openapi-bindings", ":generate-schema", ":generate-schema-pex",],
+    dependencies=[":openapi-js-bindings", ":generate-schema", ":generate-schema-pex",],
 )
