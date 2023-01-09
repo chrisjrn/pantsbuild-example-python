@@ -46,9 +46,3 @@ python_requirement(
     modules=["antlr4",],
     requirements=["antlr4-python3-runtime==4.11.1",],   
 )
-
-experimental_run_shell_command(
-    name="boop",
-    command="ls -laR {chroot}",
-    execution_dependencies=[":run_antlr"],
-)
