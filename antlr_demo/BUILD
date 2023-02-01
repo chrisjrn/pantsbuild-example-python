@@ -19,27 +19,13 @@ python_source(
 experimental_run_in_sandbox(
     name="run_antlr",
     runnable=":antlr4",
-    args=["Expr.g4", "-Dlanguage=Python3"],
-    output_files=["*.py"],
+    args=["Expr.g4", "-Dlanguage=Python3", "-o", "../expr_parser", "-package", "expr_parser",],
+    output_directories=["../expr_parser",],
     execution_dependencies=[":grammars"],
     workdir=".",
 )
 
-relocated_files(
-    name="expr_parser_py_files",
-    files_targets=[":run_antlr"],
-    src=f"{build_file_dir()}",
-    dest="expr_parser",
-)
-
-experimental_shell_command(
-    name="make_expr_parser_package",
-    tools=["touch"],
-    command="touch expr_parser/__init__.py",
-    output_files=["expr_parser/__init__.py",],
-)
-
-experimental_wrap_as_python_sources(name="expr_parser_py", inputs=[":expr_parser_py_files", ":make_expr_parser_package"])
+experimental_wrap_as_python_sources(name="expr_parser_py", inputs=[":run_antlr", ])
 
 python_requirement(
     name="antlr4-python3-runtime",
